@@ -26,6 +26,7 @@ MAPPING_FILE = 'mappings.json'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(INDEX_FOLDER, exist_ok=True)
 
+openai.api_key = 
 
 # Global Variables for Settings (can later be stored in a file or database)
 settings = {"role": "", "context": ""}
