@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debating Agents with Voice Output</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            text-align: center;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            display: flex;
+            align-items: center;
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .logo-container {
+            width: 120px;
+            margin-right: 20px;
+            text-align: center;
+        }
+        .logo-container img {
+            width: 100%;
+            height: auto;
+        }
+        .content {
+            flex-grow: 1;
+            text-align: center;
+        }
+        .debate-panel {
+            display: flex;
+            justify-content: space-between;
+            max-height: 400px;
+            overflow: auto;
+        }
+        .agent-panel {
+            border-radius: 8px;
+            padding: 15px;
+            width: 45%;
+            background: #e3e9ff;
+            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <h1>Lets Debate</h1>
+            <div class="form-section">
+                <label for="topic">Debate Topic:</label><br>
+               
+		<textarea id="topic" style="width: 90%; height: 50px;"></textarea>
+
+                <label for="rounds">Number of Rounds:</label><br>
+                <input type="number" id="rounds" min="1" value="3"><br><br>
+                <button onclick="startDebate()">Start Debate</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="debate-panel">
+        <div class="agent-panel" id="agent1-panel">
+            <h2>Agent Logic (Male Voice)</h2>
+            <div id="agent1-content"></div>
+            <button onclick="speakLatestArgument('agent1-content', 'Male')">🔊 Speak</button>
+        </div>
+        <div class="agent-panel" id="agent2-panel">
+            <h2>Agent Emotion (Female Voice)</h2>
+            <div id="agent2-content"></div>
+            <button onclick="speakLatestArgument('agent2-content', 'Female')">🔊 Speak</button>
+        </div>
+    </div>
+
+    <button id="nextRoundBtn" style="display:none;" onclick="showNextRound()">Next Round</button>
+
+    <script>
+        let debateHistory = [];
+        let roundIndex = 0;
+
+        async function startDebate() {
+            const topic = document.getElementById("topic").value;
+            const rounds = parseInt(document.getElementById("rounds").value);
+            const agent1Content = document.getElementById("agent1-content");
+            const agent2Content = document.getElementById("agent2-content");
+            const nextRoundBtn = document.getElementById("nextRoundBtn");
+
+            agent1Content.innerHTML = "";
+            agent2Content.innerHTML = "";
+
+            try {
+                const response = await fetch('/start_debate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic: topic, rounds: rounds })
+                });
+
+                debateHistory = await response.json();
+                roundIndex = 0;
+
+                nextRoundBtn.style.display = "block";
+                showNextRound();
+            } catch (error) {
+                console.error('Error:', error);
+                agent1Content.innerHTML = "<p>Error loading debate.</p>";
+                agent2Content.innerHTML = "<p>Error loading debate.</p>";
+            }
+        }
+
+        function showNextRound() {
+            const agent1Content = document.getElementById("agent1-content");
+            const agent2Content = document.getElementById("agent2-content");
+            const nextRoundBtn = document.getElementById("nextRoundBtn");
+
+            if (roundIndex < debateHistory.length) {
+                const round = debateHistory[roundIndex];
+
+                agent1Content.innerHTML += `<p class="fade-in">Round ${round.round}: ${round.agent1}</p>`;
+                setTimeout(() => {
+                    agent2Content.innerHTML += `<p class="fade-in">Round ${round.round}: ${round.agent2}</p><div class="divider"></div>`;
+                }, 2000);
+
+                roundIndex++;
+
+                if (roundIndex >= debateHistory.length) {
+                    nextRoundBtn.style.display = "none";
+                }
+            }
+        }
+
+        window.speechSynthesis.onvoiceschanged = function() {
+            console.log("Available voices:", window.speechSynthesis.getVoices());
+        };
+
+        function speakLatestArgument(agentId, voiceGender) {
+            let agentContent = document.getElementById(agentId);
+            let paragraphs = agentContent.getElementsByTagName("p");
+
+            if (paragraphs.length > 0) {
+                let latestText = paragraphs[paragraphs.length - 1].innerText;
+                let speech = new SpeechSynthesisUtterance(latestText);
+
+                setTimeout(() => {
+                    let voices = window.speechSynthesis.getVoices();
+                    
+                    if (voices.length === 0) {
+                        console.warn("No voices available, retrying...");
+                        setTimeout(() => speakLatestArgument(agentId, voiceGender), 500);
+                        return;
+                    }
+
+                    let selectedVoice = voices.find(voice => voice.name.includes(voiceGender)) || voices[0];
+
+                    if (!selectedVoice) {
+                        console.warn("No suitable voice found!");
+                        return;
+                    }
+
+                    speech.voice = selectedVoice;
+                    speech.rate = 1;
+                    speech.pitch = 1;
+                    window.speechSynthesis.speak(speech);
+                }, 500);
+            } else {
+                alert("No arguments available yet!");
+            }
+        }
+    </script>
+</body>
+</html>
