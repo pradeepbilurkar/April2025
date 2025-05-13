@@ -51,10 +51,21 @@ import speech_recognition as sr
 import threading
 from ultralytics import YOLO
 from cv2 import Stitcher_create
-import matplotlib.pyplot as plt
+import subprocess
+
 from skimage.measure import label, regionprops
 from skimage.segmentation import active_contour
 from skimage.filters import gaussian
+from queue import Queue
+import pickle
+
+from skimage.morphology import disk
+from skimage.measure import label, shannon_entropy
+from skimage.feature import graycomatrix, graycoprops
+from skimage.filters.rank import entropy
+from skimage.filters import threshold_otsu
+from skimage.measure import regionprops, regionprops_table
+from skimage import img_as_ubyte
 
 
 model = YOLO("yolov8n.pt")
@@ -308,7 +319,7 @@ class ImageProcessingApp(QMainWindow):
             "GreenScrenEffect":self.green_Screen_Effect,
             "Super Resolution":self.super_resolution,
             "Match Style": self.histogram_matching,
-            "Node_Detection":self.mammogram,
+
             #"Style_transfer":self.Style_transfer,
             "Clear Image": self.clear_images
         }
@@ -345,10 +356,35 @@ class ImageProcessingApp(QMainWindow):
             "DMS": self.run_driver_fatigue,
             "Crowd Count": self.run_crowd_count,
         }
+
         for name, method in safety_actions.items():
             action = QAction(name, self)
             action.triggered.connect(method)
             safety_menu.addAction(action)
+
+            # Safety & Monitoring Menu
+        real_manu = menu_bar.addMenu("Real World Applications")
+        real_actions = {
+            "Node_Detection": self.mammogram,
+            "Tyre Quality Mark": self.tyre_mark_detection,
+            #"Tyre Mark Matlab": self.run_matlab_app,
+        }
+        for name, method in real_actions.items():
+            action = QAction(name, self)
+            action.triggered.connect(method)
+            real_manu.addAction(action)
+
+        # real_manu = menu_bar.addMenu("Real World Applications")
+        # real_actions = {
+        #     "Node_Detection": self.mammogram,
+        #     "Tyre Quality Mark": self.tyre_mark_detection,
+        #     "Tyre Mark Matlab": run_matlab_app,  # Call MATLAB script
+        # }
+        #
+        # for name, method in real_actions.items():
+        #     action = QAction(name, self)
+        #     action.triggered.connect(method)
+        #     real_manu.addAction(action)
 
         # Miscellaneous Menu
         misc_menu = menu_bar.addMenu("Miscellaneous")
@@ -473,6 +509,10 @@ class ImageProcessingApp(QMainWindow):
             self.image_label1.setText("Load Image1.")
         if label == "image2":
             self.image_label1.setText("Load Image2")
+
+    def run_matlab_app(self):
+        subprocess.run(["matlab", "-r", r"c:\Matlab Project\TISI_Mark_Detection.mlapp"], shell=True)
+
 
 
 
@@ -659,14 +699,6 @@ class ImageProcessingApp(QMainWindow):
         cap.release()
         cv2.destroyAllWindows()
 
-
-
-
-
-
-
-
-
     def Remove_Background(self):
         if self.image1 is not None:
             image_rgb = cv2.cvtColor(self.image1, cv2.COLOR_BGR2RGB)
@@ -797,6 +829,25 @@ class ImageProcessingApp(QMainWindow):
     def update_face_recognition(self):
         # Update the right video panel
         #print(self.current_mode)
+        path = "C:/PythonProject/Image_data/FaceRecognition/"
+        known_names = []
+        known_name_encodings = []
+        images = os.listdir(path)
+        # video_capture = cv2.VideoCapture(0)
+        frame_queue = Queue()
+        processed_frame_counter = 0
+        print_interval = 10
+        display_interval = 5
+        # for _ in images:
+        #     image = fr.load_image_file(os.path.join(path, _))
+        #     encoding = fr.face_encodings(image)[0]
+        #     known_name_encodings.append(encoding)
+        #     known_names.append(os.path.splitext(os.path.basename(_))[0].capitalize())
+        #     with open('C:/PythonProject/known_name_encodings', 'wb') as pickle_file:
+        #         pickle.dump(known_name_encodings, pickle_file)
+        #     with open('C:/PythonProject/known_names', 'wb') as pickle_file:
+        #       pickle.dump(known_names, pickle_file)
+
         with open('C:/PythonProject/known_name_encodings', 'rb') as pickle_file:
             known_name_encodings = pickle.load(pickle_file)
         with open('C:/PythonProject/known_names', 'rb') as pickle_file:
@@ -818,6 +869,26 @@ class ImageProcessingApp(QMainWindow):
                         name = known_names[best_match_index]
                     else:
                         name = "Unknown"
+                        if confidence <= 0.45:  # If confidence is low, face is "Unknown"
+                           # Define the desired save path
+                            save_path = "C:/PythonProject/Image_data/FaceRecognition/"
+                            #os.makedirs(path, exist_ok=True)  # Ensure the directory exists
+
+                            # Adjust bounding box safely
+                            left = max(left - 70, 0)
+                            right = min(right + 70, frame.shape[1])
+                            top = max(top - 70, 0)
+                            bottom = min(bottom + 70, frame.shape[0])
+
+                            cropped_face = frame[top:bottom, left:right]
+                            file_name = f"{save_path}{int(time.time())}.jpg"  # Unique filename using timestamp
+                            cv2.imwrite(file_name, cropped_face)
+
+                            # Release video capture and exit
+                            self.cap.release()
+                            cv2.destroyAllWindows()
+                            self.clear_images()
+                            print(f"Unrecognized face saved: {file_name}")
                     # Convert to QImage
                     #faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
                     font = cv2.FONT_HERSHEY_DUPLEX
@@ -830,17 +901,20 @@ class ImageProcessingApp(QMainWindow):
                     self.image_labels["image_2"].setPixmap(
                         pixmap.scaled(self.image_labels["image_2"].width(), self.image_labels["image_2"].height(),
                                       Qt.KeepAspectRatio))
-                    left = left - 70
-                    right = right + 70
-                    top = top - 70
-                    bottom = bottom + 70
-
-                    #cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-                    cropped_face = frame[top:bottom, left:right]
-                    cv2.imwrite("C:/PythonProject/Image_data/deepface_images/sample.jpg", cropped_face)
+                    # left = left - 70
+                    # right = right + 70
+                    # top = top - 70
+                    # bottom = bottom + 70
+                    #
+                    # #cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+                    # cropped_face = frame[top:bottom, left:right]
+                    # cv2.imwrite("C:/PythonProject/Image_data/deepface_images/sample.jpg", cropped_face)
 
             else:
                 print("Error: Cannot read frame")
+
+
+
 
 
     def update_drowsiness(self):
@@ -1273,28 +1347,23 @@ class ImageProcessingApp(QMainWindow):
         cv2.waitKey()
 
     def stitch_images1(self):
-        img1=self.image1
-        img2 = self.image2
-        images = [img1, img2]
-        if self.image3 is not None:
-            img3 =self.image3
-            images = [img1, img2,img3]
-        import cv2
-        stitcher = cv2.Stitcher_create()
-        status, stitched_image = stitcher.stitch(images)
-
-        if stitched_image is not None:
-            cv2.imshow("TechVidvan", stitched_image)
-            cv2.waitKey(0)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                1
-            cv2.destroyAllWindows()
-
-        if status == cv2.Stitcher_OK:
-            return stitched_image
-        else:
-            print("Image stitching failed!")
-            return None
+        if self.image1 is None or self.image2 is None:
+            self.output_label.setText("Upload both images first")
+            return
+        # print("input image", self.image1.shape)
+        keypoints1, keypoints2, matches = self.detect_and_match_features()
+        H, mask = self.estimate_homography(keypoints1, keypoints2, matches)
+        warped_img = self.warp_images(H)
+        # img1 = cv2.resize(self.image1, (warped_img.shape[1], warped_img.shape[0]))
+        # output_img = self.blend_images(warped_img,img1)
+        warped_img = cv2.resize(warped_img, (self.image1.shape[1], self.image1.shape[0]))
+        output_img = self.blend_images(warped_img, self.image1)
+        output_img = cv2.cvtColor(output_img, cv2.COLOR_BGR2RGB)
+        # print('output image', output_img.shape)
+        self.image3 = output_img
+        self.display_image(self, self.image3)
+        cv2.imshow('Output', output_img)
+        cv2.waitKey()
 
     def closeEvent(self, event):
         # Release resources when the window is closed
@@ -1576,7 +1645,6 @@ class ImageProcessingApp(QMainWindow):
 
     def mammogram(self):
         image=self.image1
-        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
         gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -1591,7 +1659,21 @@ class ImageProcessingApp(QMainWindow):
             clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
             enhanced_image = clahe.apply(gray_image)
 
-        # Apply thresholding to extract bright blobs
+            # edges = cv2.Canny(enhanced_image, 50, 150)
+            # # Convert edges to a color image (apply colormap)
+            # color_mapped = cv2.applyColorMap(edges, cv2.COLORMAP_JET)
+            image1 = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
+            h, w, ch = image1.shape
+            bytes_per_line = ch * w
+            q_image = QImage(image1.data, w, h, bytes_per_line, QImage.Format_RGB888)
+            #
+            # # Display directly in QLabel without saving
+            pixmap = QPixmap.fromImage(q_image)
+            self.image_labels["image_2"].setPixmap(
+                pixmap.scaled(self.image_labels["image_2"].width(), self.image_labels["image_2"].height(),
+                              Qt.KeepAspectRatio))
+
+            # Apply thresholding to extract bright blobs
         _, bright_nodes = cv2.threshold(enhanced_image, 200, 255, cv2.THRESH_BINARY)
 
         # Label connected components (blobs)
@@ -1662,30 +1744,189 @@ class ImageProcessingApp(QMainWindow):
                               Qt.KeepAspectRatio))
 
 
+    def tyre_mark_detection(self):
+        ROTATION_COUNT = 72
+        # Load the image
+        # Get image dimensions
+        h, w = self.image1.shape[:2]
+        center = (w // 2, h // 2)
+        Im=self.image1
+        for c in range(1, ROTATION_COUNT + 1):
+            print(f"Processing {c}")  # Equivalent to `app.ProcessButton.Text = num2str(c)`
+            # Compute rotation matrix
+            try:
+                Im = cv2.cvtColor(Im, cv2.COLOR_BGR2GRAY)
+            except:
+                1
+            angle = -c * 5  # MATLAB's -c.*5 equivalent
+            rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
+            # Rotate image (crop mode)
+            IRot_original = cv2.warpAffine(Im, rotation_matrix, (w, h))
+            IRot = IRot_original.copy()
+            # Display rotated image (optional)
+            # x_start, y_start, width, height = 900, 350, 550, 200
+            x_start, y_start, width, height = 950, 380, 120, 180
+            # Perform cropping
+            im_roi = IRot[y_start:y_start + height, x_start:x_start + width]
+            # im_roi = cv2.cvtColor(im_roi, cv2.COLOR_GRAY2RGB)
+            # cv2.imshow('Final', im_roi)
+            # cv2.waitKey(0)
+            Ip = im_roi
+            # Apply threshold
 
-            # self.image3.setPixmap(pixmap)
+            Ip[Ip < 100] = 0
+            # Apply dilation using a disk structuring element (similar to offsetstrel)
+            se = disk(18)
+            BW2 = cv2.dilate(Ip, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (25, 25)))
+            # Compute Otsu threshold
+            level = threshold_otsu(BW2)
+            level = level + (0.1 * level)  # Adjust threshold like MATLAB
+            # Binarize Image
+            I_F = BW2 > level
+            I_F = I_F.astype(np.uint8)  # Convert to uint8
+            I_F = img_as_ubyte(I_F)  # Ensure correct format
+            # I_F[I_F > 0] = 255
+            I_F[(I_F >= 100) & (I_F <= 200)] = 0
+            I_F[I_F > 210] = 0
 
-            # Overlay active contour on the original image
-            # plt.figure(figsize=(10, 5))
-            # plt.imshow(image, cmap='gray')
-            # plt.plot(snake[:, 1] + minc, snake[:, 0] + minr, '-r', label="Active Contour")  # Shift coordinates back
-            # plt.legend()
-            # plt.title("Active Contour on Original Image")
-            # #plt.show()
-            # plt.savefig(self.image3, bbox_inches='tight', pad_inches=0)
-            # plt.close()
+            # Make binary (0 or 255)
+            I_F = cv2.cvtColor(BW2, cv2.COLOR_BGR2GRAY) if BW2.ndim == 3 else BW2  # Convert to grayscale if needed
+            # cv2.imshow('Final', I_F)
+            # cv2.waitKey(0)
+            # Find connected components
+            num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats((I_F), connectivity=8)
+            # skimage_labels = label(labels)
+            labels = label(labels)
+            # Extract properties like MATLAB regionprops()
+            regions = regionprops_table(labels, properties=['area', 'eccentricity', 'orientation', 'bbox', 'centroid',
+                                                            'major_axis_length', 'minor_axis_length'])
+            I_F_colored = cv2.cvtColor(I_F, cv2.COLOR_GRAY2BGR)
+            # im_roi_coloured = cv2.cvtColor(im_roi, cv2.COLOR_GRAY2BGR)
+            distances = [1]  # Pixel pair distance
+            angles = [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]  # Different angles
+
+            # Compute GLCM for each labeled region
+            glcm_features = {}
+
+            for i in range(len(regions['bbox-0'])):
+                xmin = regions['bbox-1'][i]
+                ymin = regions['bbox-0'][i]
+                xmax = regions['bbox-3'][i]
+                ymax = regions['bbox-2'][i]
+
+                region_image = im_roi[ymin:ymax, xmin:xmax]
+                if region_image.size > 0:
+                    # Compute GLCM
+
+                    glcm = graycomatrix(region_image.astype(np.uint8), distances, angles, symmetric=True, normed=True)
+
+                    # Compute contrast and other texture features
+                    contrast = graycoprops(glcm, 'contrast')
+                    dissimilarity = graycoprops(glcm, 'dissimilarity')
+                    homogeneity = graycoprops(glcm, 'homogeneity')
+                    energy = graycoprops(glcm, 'energy')
+                    correlation = graycoprops(glcm, 'correlation')
+
+                    # Store features
+                    glcm_features[i] = {
+                        "contrast": contrast.mean(),
+                        "dissimilarity": dissimilarity.mean(),
+                        "homogeneity": homogeneity.mean(),
+                        "energy": energy.mean(),
+                        "correlation": correlation.mean(),
+                    }
+                    cv2.rectangle(im_roi, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
+                # Draw green boxes
+            # for i in range(len(centroids)):
+            #     cv2.circle(im_roi, (int(centroids[i][1]), int(centroids[i][0])), 3, (255, 0, 0),
+            #                -1)  # Red dot for centroid
             #
-            # # Display final image in PyQt window
-            # image = cv2.imread(self.image3)
-            # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            # h, w, ch = image.shape
-            # bytes_per_line = ch * w
-            # q_image = QImage(image.data, w, h, bytes_per_line, QImage.Format_RGB888)
-            #
-            # # Show image in QLabel
-            # pixmap = QPixmap.fromImage(q_image)
-            # self.image3.setPixmap(pixmap)
+            # cv2.imshow('Regions Highlighted', im_roi)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
+            # Convert to usable format
+            # stats_df = pd.DataFrame(props)
+            Stats = []
+            for i in range(len(regions["area"])):
+                stat = {
+                    "Area": regions['area'][i],
+                    "Orientation": regions['orientation'][i],
+                    "eccentricity": regions['eccentricity'][i],
+                    "Major": regions["major_axis_length"][i],
+                    "Minor": regions["minor_axis_length"][i],
+                    "BBX": regions["bbox-1"][i],
+                    "BBY": regions["bbox-0"][i],
+                    "CenX": regions["centroid-1"][i],
+                    "CenY": regions["centroid-0"][i],
+                    "BBXRange": regions["bbox-1"][i] + regions["bbox-3"][i],
+                    "BBYRange": regions["bbox-0"][i] + regions["bbox-2"][i],
+                }
+                Stats.append(stat)
+            # Display results
+            # print(stats_df.head())  # Check region properties
+            idx = [
+                m for m, stat in enumerate(Stats)
+                if (900 < stat["Area"] < 1000) and (-.9 < stat["Orientation"] < 0) and
+                   (30 < stat["Major"] < 50) and (stat["Minor"] > 20) and (80 < stat['BBX'] < 90) and (
+                               glcm_features[m]['contrast'] < 100)
+            ]
+            idx = [
+                m for m, stat in enumerate(Stats)
+                if (700 < stat["Area"] < 1000) and (-.9 < stat["Orientation"] < 1) and
+                   (30 < stat["Major"] < 50) and (stat["Minor"] > 20)
+                   and (glcm_features[m]['contrast'] < 100)
+            ]
 
+
+            IFinal_comp = img_as_ubyte(np.invert(BW2))  # Equivalent to `imcomplement` & `im2uint8`
+            # Extract filtered stats
+            stats_results = [Stats[z] for z in idx]
+            if len(IRot_original.shape) == 2:  # If grayscale, convert to RGB
+                IRot_original = cv2.cvtColor(IRot_original, cv2.COLOR_GRAY2BGR)
+                1
+            if len(idx) > 0:
+                for k in range(len(stats_results)):
+                    xbar = stats_results[k]["CenX"] + x_start
+                    ybar = stats_results[k]["CenY"] + y_start
+                    a = stats_results[k]["Major"] / 2
+                    b = stats_results[k]["Minor"] / 2
+                    theta = np.radians(stats_results[k]["Orientation"])
+
+                    R = np.array([[np.cos(theta), np.sin(theta)],
+                                  [-np.sin(theta), np.cos(theta)]])
+
+                    phi = np.linspace(0, 2 * np.pi, 50)
+                    cosphi = np.cos(phi)
+                    sinphi = np.sin(phi)
+
+                    xy = np.vstack((a * cosphi, b * sinphi))
+                    xy = R @ xy
+
+                    x = (xy[0, :] + xbar).astype(int)
+                    y = (xy[1, :] + ybar).astype(int)
+
+                    for i in range(len(x) - 1):
+                        cv2.line(IRot_original, (x[i], y[i]), (x[i + 1], y[i + 1]), (0, 0, 255), 3)  # Draw ellipses on main image
+                cv2.putText(IRot_original, "Tyre Mark Detected", (100, 60),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 3)
+                # Resized_IRot=cv2.resize(IRot_original, (900,900), interpolation=cv2.INTER_LINEAR
+                self.image3=IRot_original
+                self.display_image(self,IRot_original)
+                cv2.imshow("Contours on Main Image", IRot_original)
+                cv2.moveWindow("Contours on Main Image", 100, 100)
+                cv2.namedWindow("Contours on Main Image", cv2.WINDOW_NORMAL)
+                # cv2.resizeWindow("Contours on Main Image", 400, 400)  # Set initial window size
+                cv2.waitKey(0)
+                cv2.destroyAllWindows(),
+                break
+            else:
+                try:
+                    Im = cv2.cvtColor(Im, cv2.COLOR_RGB2GRAY)
+                except:
+                    1
+        cv2.putText(IRot_original, "Tyre Mark NOT Detected", (150, 50),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.imshow("Contours on Main Image", IRot_original)
 
     def Enhance_image(self):
         reference=self.image2
@@ -1696,9 +1937,6 @@ class ImageProcessingApp(QMainWindow):
         matched = match_histograms(image, reference, channel_axis=-1)
         self.image3 = matched
         self.display_image(self, self.image3)
-
-
-
 
 
     def perform_edge_detection(self):
