@@ -1,0 +1,9 @@
+scipy
+imutils
+numpy
+argparse
+opencv-python
+pygame
+pyqt5
+mediapipe
+joblib
