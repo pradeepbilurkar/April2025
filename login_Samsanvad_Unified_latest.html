@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ 'Sign In' if form_action == url_for('login') else 'Sign Up' }}</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f6f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 60px 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      width: 420px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+      color: #333;
+    }
+    fieldset {
+      border: none;
+      padding: 0;
+      margin: 0;
+    }
+    legend {
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-bottom: 10px;
+      text-align: center;
+      color: #555;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      margin: 12px 0;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    .password-wrapper {
+      position: relative;
+    }
+    .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 14px;
+      background: none;
+      border: none;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 1em;
+      background: #0078D7;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #005fa3;
+    }
+    .error {
+      color: red;
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 0.95em;
+    }
+    .success {
+      color: green;
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 0.95em;
+    }
+    .toggle-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.95em;
+    }
+    .toggle-link a {
+      color: #0078D7;
+      text-decoration: none;
+    }
+    .toggle-link a:hover {
+      text-decoration: underline;
+    }
+    label {
+      font-size: 0.95em;
+      display: block;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>{{ 'Sign In' if form_action == url_for('login') else 'Sign Up' }}</h2>
+
+    {% if error %}
+      <div class="error">{{ error }}</div>
+    {% endif %}
+    {% if success %}
+      <div class="success">{{ success }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ form_action }}">
+      <fieldset>
+        <legend>
+          {{ 'Enter your credentials to sign in' if form_action == url_for('login') else 'Create your account' }}
+        </legend>
+
+        <input type="email" name="email" placeholder="Email" required autocomplete="email">
+        <input type="text" name="username" placeholder="Username" required autocomplete="username">
+
+        <div class="password-wrapper">
+          <input type="password" name="password" placeholder="Password" required id="password-field" autocomplete="current-password">
+          <button type="button" class="toggle-password" onclick="togglePassword()">👁️</button>
+        </div>
+
+        <label>
+          <input type="checkbox" name="remember"> Remember Me
+        </label>
+
+        <button class="btn" type="submit">{{ 'Login' if form_action == url_for('login') else 'Register' }}</button>
+      </fieldset>
+    </form>
+
+    <div class="toggle-link">
+      {% if form_action == url_for('login') %}
+        <span>If not already registered, <a href="{{ url_for('register') }}">Sign Up</a></span>
+      {% else %}
+        <span>Already registered? <a href="{{ url_for('login') }}">Sign In</a></span>
+      {% endif %}
+    </div>
+  </div>
+
+  <script>
+    function togglePassword() {
+      const field = document.getElementById("password-field");
+      field.type = field.type === "password" ? "text" : "password";
+    }
+  </script>
+</body>
+</html>

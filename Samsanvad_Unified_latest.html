@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SamSanvad Chat</title>
+  <style>
+    /* 🌗 Theme Variables */
+    :root {
+      --color-primary: #6b8e23;
+      --color-accent: #5e4d3a;
+      --color-bg: #f0f2f5;
+      --color-card: #ffffff;
+      --color-text: #000000;
+    }
+
+    [data-theme="dark"] {
+      --color-bg: #000066;
+      --color-text: #f0f0f0;
+      --color-accent: #90ee90;
+    }
+
+    /* 🧱 Global Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      overflow: hidden;
+    }
+
+    body {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      justify-items: center;
+      align-items: start;
+    }
+
+    /* 🔧 Utility Classes */
+    .flex-row { display: flex; flex-direction: row; gap: 12px; }
+    .flex-col { display: flex; flex-direction: column; gap: 12px; }
+    .mt-12 { margin-top: 12px; }
+    .mb-20 { margin-bottom: 20px; }
+
+    /* 🎛️ Top Controls */
+    #topControlsWrapper {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      z-index: 1001;
+    }
+
+    #topControlsWrapper a,
+    #topControlsWrapper button {
+      font-size: 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* 🧾 Header */
+    #header {
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+margin-left: 25px;
+    }
+
+#header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 40px;
+}
+
+#sidebar {
+  width: 360px; /* Increase from default (e.g., 200px or 240px) */
+}
+
+#voiceInputBtn {
+  font-size: 18px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+
+
+
+    #logo {
+      height: 60px;
+      margin-top: 40px;
+      transform: translateX(-440px);
+    }
+
+    #label {
+      position: relative;
+      top: 25px;
+      transform: translateX(-450px);
+    }
+
+    /* 📦 Response Area */
+    #response {
+      width: 100%;
+      max-width: 1100px;
+      background: var(--color-card);
+      padding: 15px;
+      border-radius: 6px;
+      border-left: 4px solid var(--color-primary);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      overflow-y: auto;
+      margin-bottom: 1px;
+      height: calc(100vh - 250px);
+      position: relative;
+	font-size: 1.5rem
+    }
+
+    /* 💬 Chat Input */
+    #chatInputBlock {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      align-items: center;
+      background-color: #f3f3f3;
+      padding: 12px;
+      border-radius: 8px;
+    }
+
+    #userInput {
+      flex: 1;
+      padding: 12px;
+      font-size: 22px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    #sendButton {
+      margin-left: 10px;
+      font-size: 20px;
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 16px;
+      cursor: pointer;
+    }
+
+    /* 🧠 Sidebar */
+    #settingsSidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 850px;
+      height: 120vh;
+      background: var(--color-bg);
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+
+    #settingsSidebar.visible {
+      transform: translateX(0%);
+    }
+
+    #settingsSidebar .main {
+      max-height: calc(100vh - 60px);
+      overflow-y: auto;
+    }
+
+    #settingsSidebar h2 {
+      font-size: 1.5em;
+      margin-bottom: 12px;
+      color: var(--color-text);
+      border-bottom: 1px solid #4807F7;
+      padding-bottom: 4px;
+    }
+
+    .card {
+      background: var(--color-card);
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .card label {
+      display: block;
+      margin-top: 12px;
+      font-size: 16px;
+      font-weight: 500;
+      line-height: 1.4;
+      transition: color 0.2s ease;
+    }
+
+    .card label:hover {
+      color: var(--color-accent);
+    }
+
+    .card input[type="text"],
+    .card input[type="file"],
+    .card input[type="number"],
+    .card select,
+    .card textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      font-size: 16px;
+      border: 1px solid #F70707;
+      border-radius: 4px;
+    }
+
+    label.required::after {
+      content: " *";
+      color: red;
+      font-weight: normal;
+    }
+
+  :root {
+  /* Half-width of #response box for alignment */
+  --response-half-width: 390px;
+
+  /* Icon size and spacing */
+  --action-icon-size: 40px;
+  --action-icon-gap: 12px;
+}
+
+.action-button {
+  margin: 12px; /* Adjust spacing as needed */
+  font-size: 30px; /* Optional: increase icon size */
+  cursor: pointer;
+}
+
+/* Action buttons column aligned to right of #response */
+#actionButtonsColumn {
+  position: absolute;
+  top: 120px; /* 100px + 20px offset */
+  left: calc(61% + var(--response-half-width));
+  display: flex;
+  flex-direction: column;
+  gap: var(--action-icon-gap);
+  z-index: 100;
+}
+
+.action-button span {
+  display: inline-block;
+  font-size: 40px;
+  white-space: nowrap;
+}
+
+/* Individual icon buttons */
+#actionButtonsColumn button,
+#actionButtonsColumn a {
+  font-size: 1.8rem;
+  width: var(--action-icon-size);
+  height: var(--action-icon-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+#togglePreview {
+  font-size: 18px;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+}
+
+/* Optional hover feedback */
+#actionButtonsColumn button:hover,
+#actionButtonsColumn a:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+}
+
+    /* 🧾 Status Message */
+    #statusMessage {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 15px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      z-index: 9999;
+    }
+
+    #statusMessage[role="alert"] {
+      aria-live: assertive;
+    }
+
+    #statusText {
+      margin-bottom: 10px;
+    }
+
+    /* 🧩 Context Controls */
+    #contextControls {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    #contextControls button {
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      background-color: #f5f5f5;
+      transition: background-color 0.2s ease;
+    }
+
+    #contextControls button:hover {
+      background-color: #e0e0e0;
+    }
+
+   /* 📱 Responsive: Mobile-first adjustments */
+@media (max-width: 600px) {
+  label {
+    font-size: 13px;
+  }
+
+  #responseBox {
+    padding: 12px;
+    font-size: 18px;
+  }
+
+  #actionButtonsColumn {
+    flex-direction: row;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  #settingsSidebar,
+  #pptPreviewPanel {
+    position: absolute;
+    width: 100%;
+    height: auto;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+
+  button,
+  a {
+    font-size: 16px;
+    padding: 6px 10px;
+  }
+}
+
+
+#topControlsWrapper a {
+  font-size: 2rem; /* or 24px */
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#label {
+  font-size: 2.0rem; /* Increase from default (e.g., 1rem or 1.2rem) */
+  font-weight: 600;  /* Optional: make it slightly bolder */
+  margin-left: 12px; /* Optional: spacing from logo */
+  vertical-align: middle;
+}
+
+  </style>
+</head>
+<body>
+
+
+  <div id="statusMessage" role="alert">
+    <div id="statusText">Status goes here</div>
+    <button id="statusOkBtn">OK</button>
+  </div>
+
+ <div id="actionButtonsColumn">
+  <a href="#" title="Settings" onclick="toggleSettingsSidebar(event)">⚙️</a>
+  <button onclick="generatePresentation()" title="Generate Presentation">📑</button>
+  <!--<button onclick="startListening()" title="Start Voice Input">🎤</button>-->
+  <!--<button onclick="speakLatestResponse()" title="Read Response Aloud">🔊</button>-->
+<button id="runQueryBtn" title="Execute Query Document">➡️ </button>
+
+  <!-- New Toggle Button -->
+ <button id="togglePreview" title="Toggle PPT Preview">📂 </button>
+
+</div>
+
+
+  <div id="header">
+    <img src="/static/logo6.jpg" id="logo" />
+    <span id="label">SamSanvad</span>
+  </div>
+
+
+
+
+
+ <!-- Preview panel floats independently -->
+<div id="pptPreviewPanel" style="
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 300px;
+  padding: 12px;
+  background: var(--color-card, #f9f9f9);
+  border-right: 1px solid #ccc;
+  overflow-y: auto;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 100;
+">
+  <h3>PPT Preview</h3>
+  <div id="pptPreviewContent"></div>
+</div>
+
+<!-- Main response box stays full-width -->
+<div id="response">
+  <!-- Chat messages go here -->
+</div>
+
+
+
+
+
+  <div id="chatInputBlock">
+  <input type="text" id="userInput" placeholder="Type your message..." />
+ <button onclick="startListening()" title="Start Voice Input" id="voiceInputBtn">🎤</button>
+
+  <button id="sendButton" onclick="sendQuery()">➤</button>
+</div>
+
+<!-- 🧠 Settings Sidebar -->
+<div id="settingsSidebar" class="sidebar" role="complementary" aria-label="Settings Panel">
+  <div class="main">
+
+    <!-- 📄 Select Document Block -->
+    <div class="card">
+      <h2>📄 Select Document</h2>
+      <label for="fileDropdown">Choose a document:</label>
+      <select id="fileDropdown"></select>
+
+      <label for="vectorModeSelect">Vector Mode:</label>
+      <select id="vectorModeSelect">
+        <option value="single">Single</option>
+        <option value="multi">Multi</option>
+      </select>
+    </div>
+
+<div class="card">
+  <h2>📁 Upload Query Document</h2>
+  <label for="queryFile">Select Query Document:</label>
+  <input type="file" id="queryFile" />
+  <button onclick="uploadQueryDocument()" id="queryUploadBtn" style="margin-top: 12px;style="margin-left:16px"> Upload Query
+  </button>
+	<label for="queryDropdown">📄 Select Query Document:</label>
+	<select id="queryDropdown">
+  <option value="">-- Choose a document --</option>
+</select>
+
+   
+    <!-- 📁 Source Configuration -->
+    <div class="card">
+      <h2>📁 Source Configuration</h2>
+      <label for="siteUrlInput">Website URL:</label>
+      <input type="text" id="siteUrlInput" placeholder="https://example.com" />
+      <button onclick="submitWebsiteURL()" id="indexBtn"style="margin-top: 12px";style="margin-left:16px">Index</button>
+
+      <label for="uploadFile">Upload Document:</label>
+      <input type="file" id="uploadFile" />
+      <button onclick="uploadDocument()" id="uploadBtn" style="margin-top: 12px";style="margin-left:16px">Upload</button>
+
+    </div>
+
+   </div>
+    <!-- 🎛️ Presentation Settings -->
+    <div class="card">
+      <h2>🎛️ Presentation Settings</h2>
+      <label for="slideCountInput">Number of Slides:</label>
+      <input type="number" id="slideCountInput" min="1" max="10" value="2" />
+    </div>
+
+
+
+ <!-- 🧠 Role & Context -->
+    <div class="card">
+      <h2>🧠 Role & Context</h2>
+      <label for="role">Role:</label>
+      <input type="text" id="role" placeholder="e.g., Legal Advisor" />
+      <label for="context">Context:</label>
+      <textarea id="context" rows="3" placeholder="Constraints, tone, background..."></textarea>
+
+	<!-- 💾 Context Controls -->
+   <div id="contextControls" class="card">
+  <button id="saveContextBtn" style="font-size: 20px; padding: 10px 16px;">💾</button>
+  <button id="refreshContextBtn" style="font-size: 20px; padding: 10px 16px;">🔄</button>
+</div>
+
+
+    </div>
+
+    <!-- 🖼️ Logo Upload -->
+    <div class="card">
+      <h2>🖼️ Logo Upload</h2>
+      <label for="logoInput">Upload Logo:</label>
+      <input type="file" id="logoInput" accept="image/*" onchange="previewLogo(event)" />
+<button onclick="uploadLogo()" style="margin-top: 12px";style="margin-left:16px">Upload & Replace</button>
+    </div>
+
+    <!-- 🌗 Appearance Settings -->
+    <div class="card">
+      <h2>🌗 Appearance</h2>
+      <label for="themeToggle">Theme:</label>
+      <select id="themeToggle">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </div>
+
+  </div>
+
+  <script>
+
+
+function toggleSettingsSidebar(event) {
+  event.stopPropagation(); // Prevent bubbling to document
+  const sidebar = document.getElementById("settingsSidebar");
+  sidebar.classList.toggle("visible");
+}
+
+
+
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("theme", theme);
+}
+
+document.getElementById("themeToggle")?.addEventListener("change", (e) => {
+  applyTheme(e.target.value);
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+  const savedTheme = localStorage.getItem("theme") || "light";
+  applyTheme(savedTheme);
+  document.getElementById("themeToggle").value = savedTheme;
+});
+
+ 	
+    function uploadDocument() {
+  // ✅ Grab the correct file input element
+  const fileInput = document.getElementById("uploadFile");
+  const vectorModeSelect = document.getElementById("vectorModeSelect");
+
+  // 🧠 Safely extract values
+  const file = fileInput?.files?.[0];
+  const vectorMode = vectorModeSelect?.value?.trim() || "single";
+
+  // 🛡️ Defensive check
+  if (!file) {
+    alert("Please select a file before uploading.");
+    return;
+  }
+
+  // 📦 Prepare FormData payload
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("vectorMode", vectorMode);
+
+  // 🧪 Diagnostic preview
+  console.log("Uploading file:", file.name);
+  console.log("Selected vector mode:", vectorMode);
+  for (let pair of formData.entries()) {
+    console.log(`${pair[0]}: ${pair[1]}`);
+  }
+
+  // 🚀 Dispatch to backend
+  fetch("/upload", {
+    method: "POST",
+    body: formData
+  })
+    .then(res => res.json())
+    .then(data => {
+      console.log("Server response:", data);
+      alert(data.message);
+    })
+    .catch(err => {
+      console.error("Upload failed:", err);
+      alert("Upload failed. Check console for details.");
+    });
+}
+
+
+   function startListening() {
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = "en-IN";
+  recognition.interimResults = false;
+
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    document.getElementById("userInput").value = transcript;
+    sendQuery();
+  };
+
+  recognition.onerror = (e) => {
+    console.error("Speech recognition error:", e.error);
+  };
+
+  recognition.start();
+}
+
+function readLastResponse() {
+	   const responseText = document.getElementById("response").innerText;
+  	     if (responseText.trim() === "") return;
+
+  	   const utterance = new SpeechSynthesisUtterance(responseText);
+           utterance.lang = "en-IN";
+           speechSynthesis.speak(utterance);
+     }
+
+
+function appendBotReply(text) {
+  const replyDiv = document.createElement('div');
+  replyDiv.className = 'botReply';
+
+  // Create span for spoken text
+  const spokenSpan = document.createElement('span');
+  spokenSpan.className = 'spokenText';
+  spokenSpan.textContent = text;
+
+  // Create 🔊 button
+  const speakBtn = document.createElement('button');
+  speakBtn.textContent = '🔊';
+  speakBtn.title = 'Read aloud';
+  speakBtn.style.marginLeft = '8px';
+  speakBtn.style.cursor = 'pointer';
+  speakBtn.onclick = () => {
+    const utterance = new SpeechSynthesisUtterance(spokenSpan.textContent);
+    utterance.lang = "en-US";
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Append span and button to reply container
+  replyDiv.appendChild(spokenSpan);
+  replyDiv.appendChild(speakBtn);
+
+  // Add to response area
+  document.getElementById('response').appendChild(replyDiv);
+}
+
+
+
+
+function speakLatestResponse() {
+  const responses = document.querySelectorAll(".spokenText");
+  const latest = responses[responses.length - 1];
+  if (!latest) return;
+
+  const utterance = new SpeechSynthesisUtterance(latest.textContent);
+  utterance.lang = "en-US"; // Customize language/voice as needed
+  window.speechSynthesis.cancel(); // Stop any ongoing speech
+  window.speechSynthesis.speak(utterance);
+}
+
+
+
+  function refreshFileList() {
+   fetch("/files")
+    .then(res => res.json())
+    .then(data => {
+      const dropdown = document.getElementById("fileDropdown");
+      dropdown.innerHTML = ""; // Clear old entries
+      data.files.forEach(file => {
+        const option = document.createElement("option");
+        option.value = file;
+        option.textContent = file;
+        dropdown.appendChild(option);
+      });
+    })
+    .catch(err => {
+      console.error("Failed to load files:", err);
+      const dropdown = document.getElementById("fileDropdown");
+      dropdown.innerHTML = "<option>⚠️ Error loading files</option>";
+    });
+}
+
+document.addEventListener("keydown", function (event) {
+if (event.key === "Escape") {
+  speechSynthesis.cancel();
+  alert("🔇 Voice stopped");
+}
+
+
+});
+
+function sendQuery() {
+  const query = document.getElementById("userInput")?.value?.trim();
+  if (!query) return;
+
+  const role = document.getElementById("role")?.value || "Assistant";
+  const context = document.getElementById("context")?.value || "";
+  const vectorMode = document.getElementById("vectorModeSelect").value;
+
+  const responseBox = document.getElementById("response");
+
+  // Append user message
+  const userMessage = document.createElement("div");
+  userMessage.innerHTML = `<strong>You:</strong> ${query}`;
+  userMessage.style.marginBottom = "10px";
+  responseBox.appendChild(userMessage);
+
+  // Clear input field
+  document.getElementById("userInput").value = "";
+
+  fetch("/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, role, context, vectorMode })
+  })
+  .then(res => res.json())
+  .then(data => {
+    const botMessage = document.createElement("div");
+botMessage.className = "botReply";
+botMessage.style.borderLeft = "4px solid #6b8e23";
+botMessage.style.paddingLeft = "10px";
+botMessage.style.marginBottom = "20px";
+
+// Role label
+const roleLabel = document.createElement("strong");
+roleLabel.textContent = `${role}: `;
+roleLabel.textContent = "AIGini: ";
+
+
+// Spoken text span
+const spokenSpan = document.createElement("span");
+spokenSpan.className = "spokenText";
+spokenSpan.textContent = data.response ?? "No response received.";
+
+// 🔊 Button
+const speakBtn = document.createElement("button");
+speakBtn.textContent = "🔊";
+speakBtn.title = "Read aloud";
+speakBtn.style.marginLeft = "8px";
+speakBtn.style.cursor = "pointer";
+speakBtn.onclick = () => {
+  const utterance = new SpeechSynthesisUtterance(spokenSpan.textContent);
+  utterance.lang = "en-US";
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+};
+
+speakBtn.style.border = "none";
+speakBtn.style.background = "none";
+speakBtn.style.padding = "0";
+speakBtn.style.fontSize = "1.2rem"; // Optional: match icon size
+
+
+
+
+
+// Assemble and append
+botMessage.appendChild(roleLabel);
+botMessage.appendChild(spokenSpan);
+botMessage.appendChild(speakBtn);
+responseBox.appendChild(botMessage);
+
+
+
+    // Scroll to bottom
+    responseBox.scrollTop = responseBox.scrollHeight;
+
+    // ✅ Store response and context for slide generation
+    window.chatResponseText = data.response;
+    window.chatContextUsed = data.context_used;
+
+    console.log("🧠 Stored chat response:", window.chatResponseText);
+    console.log("📍 Stored context:", window.chatContextUsed);
+  })
+  .catch(err => console.error("Chat error:", err));
+}
+
+
+function pushSettingsToBackend() {
+  fetch("/update_settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(currentSettings)
+  })
+  .then(res => res.json())
+  .then(data => console.log("✅ Settings updated:", data))
+  .catch(err => console.error("❌ Failed to update settings:", err));
+}
+
+function uploadDocument_w() {
+  const fileInput = document.getElementById("uploadFile");
+  const file = fileInput.files[0];
+  if (!file) return alert("Please select a file first.");
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  fetch("/upload", {
+    method: "POST",
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message || "✅ Upload successful.");
+    fileInput.value = ""; // Clear selection
+  })
+  .catch(err => {
+    console.error("Upload failed:", err);
+    alert("❌ Upload failed.");
+  });
+}
+
+
+function submitWebsiteURL() {
+  const url = document.getElementById("siteUrlInput").value.trim();
+  const vectorMode = document.getElementById("vectorModeSelect").value;
+  console.log("🔔 submitWebsiteURL triggered with:", url, vectorMode);
+
+  if (!url) return alert("Please enter a valid URL.");
+
+  fetch("/index_url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url, vectorMode })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(`✅ ${data.message}`);
+  })
+  .catch(err => {
+    console.error("Indexing error:", err);
+    alert("❌ Error while indexing. Check logs.");
+  })
+  .finally(() => {
+    document.getElementById("waitOverlay").style.display = "none";  // Hide wait bar
+  });
+}
+
+
+
+
+
+
+
+
+
+
+// Fetch files on load
+window.addEventListener("load", () => {
+  refreshFileList();
+  document.getElementById("vectorModeSelect")?.addEventListener("change", refreshFileList);
+  document.getElementById("modeSelector")?.addEventListener("change", updateFiles);
+});
+
+document.getElementById('userInput').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault(); // Prevent accidental form submits
+    document.getElementById('sendButton').click(); // Trigger existing send logic
+  }
+});
+
+ function previewLogo(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('logo').src = e.target.result; // Live preview in header
+  };
+  reader.readAsDataURL(file);
+}
+
+
+
+function uploadLogo() {
+  const fileInput = document.getElementById("logoInput");
+  const file = fileInput.files[0];
+  if (!file) {
+    alert("⚠️ No file selected.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("logo", file);
+
+  fetch("/upload_logo", {
+    method: "POST",
+    body: formData
+  })
+    .then(res => {
+      if (res.ok) {
+        // Force refresh to bypass browser cache
+        document.getElementById("logo").src = "/static/logo6.jpg?" + new Date().getTime();
+        alert("✅ Logo updated successfully.");
+      } else {
+        alert("❌ Upload failed.");
+      }
+    })
+    .catch(err => {
+      console.error("Upload error:", err);
+      alert("❌ Upload failed.");
+    });
+}
+
+
+
+
+
+function b64ToBlob(base64, mime) {
+  const byteChars = atob(base64);
+  const byteNumbers = new Array(byteChars.length).fill().map((_, i) => byteChars.charCodeAt(i));
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], { type: mime });
+}
+
+
+function generatePresentation() {
+  const slideCount = parseInt(document.getElementById("slideCountInput")?.value) || 2;
+
+  const final_response = window.chatResponseText;
+  const context = window.chatContextUsed;
+
+  const statusBox = document.getElementById("statusMessage");
+  const statusText = document.getElementById("statusText");
+  const okBtn = document.getElementById("statusOkBtn");
+
+  const showStatus = (message) => {
+    statusText.innerText = message;
+    statusBox.style.display = "block";
+    okBtn.onclick = () => {
+      statusBox.style.display = "none";
+    };
+  };
+
+  // 🔽 Inserted fetch block starts here
+  fetch("/generate_ppt", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_json: {
+        response: final_response,
+        context_used: context
+      },
+      slide_count: slideCount
+    })
+  })
+    .then(async res => {
+      const raw = await res.text();
+      console.log("📦 Raw response:", raw);
+
+      try {
+        const data = JSON.parse(raw);
+        console.log("✅ Parsed JSON:", data);
+
+        if (data.status === "success") {
+          showStatus(`✅ Presentation saved.\n📂 Location: ${data.path}`);
+          showGeneratedPPT(data.path);
+        } else {
+          showStatus(`❌ ${data.message}`);
+        }
+      } catch (err) {
+        console.error("❌ JSON parse failed:", err);
+        showStatus("⚠️ Server returned invalid response.");
+      }
+    })
+    .catch(err => {
+      console.error("❌ Fetch failed:", err);
+      showStatus("⚠️ Server error during slide generation.");
+    });
+}
+ 
+
+
+const previewPanel = document.getElementById("pptPreviewPanel");
+const toggleBtn = document.getElementById("togglePreview");
+
+let isVisible = false;
+
+toggleBtn.addEventListener("click", () => {
+  isVisible = !isVisible;
+  previewPanel.style.transform = isVisible ? "translateX(0)" : "translateX(-100%)";
+
+  toggleBtn.innerHTML = isVisible
+    ? "👁️"
+    : "📂 ";
+});
+
+
+
+
+
+
+
+  
+
+const currentSettings = {
+  vectorMode: "",
+  role: "",
+  context: ""
+};
+
+function syncSettings() {
+  currentSettings.vectorMode = document.getElementById("vectorModeSelect")?.value || "single";
+  currentSettings.role = document.getElementById("role")?.value || "Assistant";
+  currentSettings.context = document.getElementById("context")?.value || "";
+
+  console.log("🔄 Synced settings:", currentSettings);
+}
+
+
+
+// 🔄 Refresh file list based on vector mode
+function refreshFileList(mode) {
+  if (!mode) {
+    console.warn("⚠️ No vector mode provided to refreshFileList.");
+    return;
+  }
+
+  fetch(`/files?mode=${mode}`)
+    .then(res => res.json())
+    .then(data => {
+      updateDropdown(data.files);
+    })
+    .catch(err => {
+      console.error("Failed to load files:", err);
+      updateDropdown(["⚠️ Error loading files"]);
+    });
+}
+
+
+const ContextManager = {
+  set({ role, context }) {
+    const current = this.get();
+    const updated = {
+      role: role ?? current.role,
+      context: context ?? current.context
+    };
+    localStorage.setItem("userContext", JSON.stringify(updated));
+  },
+
+  get() {
+    return JSON.parse(localStorage.getItem("userContext")) || {};
+  }
+};
+
+
+
+
+
+const { role, context } = ContextManager.get();
+
+fetch('/get_dashboard', {
+  method: 'GET',
+  headers: {
+    'X-User-Role': role || 'guest',
+    'X-Context': context || 'default'
+  }
+})
+  .then(res => res.json())
+  .then(data => {
+    renderDashboard(data.modules);
+  });
+
+
+
+
+
+function updateDropdown(files) {
+  const dropdown = document.getElementById("fileDropdown");
+  dropdown.innerHTML = "";
+
+  files.forEach(file => {
+    const option = document.createElement("option");
+    option.value = file;
+    option.textContent = file;
+    dropdown.appendChild(option);
+  });
+}
+
+
+function showGeneratedPPT(pptPath) {
+  const panel = document.getElementById("pptPreviewPanel");
+  const content = document.getElementById("pptPreviewContent");
+
+  // Clear previous content
+  content.innerHTML = "";
+
+  // Create download link
+  const link = document.createElement("a");
+  link.href = pptPath;
+  link.innerText = "📥 Download Presentation";
+  link.download = pptPath.split("/").pop();
+  link.style.display = "block";
+  link.style.marginBottom = "12px";
+
+  // Optional: Show file name
+  const fileName = document.createElement("div");
+  fileName.innerText = `File: ${pptPath.split("/").pop()}`;
+  fileName.style.fontSize = "14px";
+  fileName.style.color = "#555";
+
+  content.appendChild(link);
+  content.appendChild(fileName);
+
+  // Show panel
+  panel.style.display = "block";
+}
+
+function uploadQueryDocument() {
+  const queryInput = document.getElementById("queryFile");
+  const queryFile = queryInput?.files?.[0];
+
+  if (!queryFile) {
+    alert("Please select a query document to upload.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", queryFile);
+  formData.append("documentType", "query"); // Optional metadata for backend routing
+
+  fetch("/upload", {
+    method: "POST",
+    body: formData
+  })
+    .then(res => res.json())
+    .then(data => {
+      alert(data.message || "✅ Query document uploaded successfully.");
+      queryInput.value = ""; // Clear selection
+    })
+    .catch(err => {
+      console.error("Upload failed:", err);
+      alert("❌ Upload failed.");
+    });
+}
+
+
+
+
+// ✅ Vector Mode Initialization (unchanged)
+window.addEventListener("load", () => {
+  const vectorModeSelect = document.getElementById("vectorModeSelect");
+  const defaultMode = vectorModeSelect?.value || "single";
+  refreshFileList(defaultMode);
+
+  vectorModeSelect?.addEventListener("change", (e) => {
+    const mode = e.target.value;
+    if (!mode) {
+      console.warn("⚠️ No vector mode selected.");
+      return;
+    }
+    refreshFileList(mode);
+  });
+});
+
+
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    const dropdown = document.getElementById("queryDropdown");
+    if (!dropdown) {
+      console.warn("Dropdown element not found. Skipping query document load.");
+      return;
+    }
+
+    fetch("/listqueries")
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Server responded with status ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        dropdown.innerHTML = '<option value="">-- Choose a document --</option>';
+        data.query_documents.forEach(doc => {
+          const option = document.createElement("option");
+          option.value = doc;
+          option.textContent = doc;
+          dropdown.appendChild(option);
+        });
+      })
+      .catch(error => {
+        console.error("❌ Failed to load query documents:", error);
+      });
+  });
+
+
+
+document.addEventListener("keydown", function (event) {
+  if (event.key.toLowerCase() === "q") {
+    const sidebar = document.getElementById("settingsSidebar");
+    if (sidebar?.classList.contains("visible")) {
+      sidebar.classList.remove("visible");
+      console.log("🧹 Sidebar hidden via 'q' key");
+    }
+  }
+});
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const ContextManager = {
+    set({ role, context }) {
+      fetch('/save_context', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, context })
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log("✅ Context saved:", data);
+        })
+        .catch(err => {
+          console.error("❌ Failed to save context:", err);
+        });
+    },
+
+    get() {
+      return fetch('/load_context')
+        .then(res => res.json())
+        .catch(err => {
+          console.warn("⚠️ Failed to load context:", err);
+          return {};
+        });
+    }
+  };
+window.addEventListener("DOMContentLoaded", () => {
+  const saveBtn = document.getElementById("saveContextBtn");
+  const refreshBtn = document.getElementById("refreshContextBtn");
+
+  saveBtn?.addEventListener("click", () => {
+    const role = document.getElementById("role")?.value?.trim();
+    const context = document.getElementById("context")?.value?.trim();
+
+    console.log("🔔 Save button clicked");
+    console.log("Sending:", { role, context });
+
+    if (!role || !context) {
+      console.warn("⚠️ Missing role or context before saving");
+      return;
+    }
+
+    fetch("/save_context", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role, context })
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log("✅ Context saved:", data);
+      })
+      .catch(err => {
+        console.error("❌ Failed to save context:", err);
+      });
+  });
+
+  refreshBtn?.addEventListener("click", async () => {
+    const res = await fetch("/load_context");
+    const { role, context } = await res.json();
+
+    document.getElementById("role").value = role || "";
+    document.getElementById("context").value = context || "";
+
+    fetch("/get_dashboard", {
+      method: "GET",
+      headers: {
+        "X-User-Role": role || "guest",
+        "X-Context": context || "default"
+      }
+    })
+      .then(res => res.json())
+      .then(data => {
+        renderDashboard(data.modules);
+      });
+  });
+});
+
+
+  // 🔄 Refresh Button Logic
+  document.getElementById("refreshContextBtn")?.addEventListener("click", async () => {
+    const { role, context } = await ContextManager.get();
+
+    document.getElementById("role").value = role || "";
+    document.getElementById("context").value = context || "";
+
+    const vectorModeSelect = document.getElementById("vectorModeSelect");
+    const mode = vectorModeSelect?.value || "single";
+    refreshFileList(mode);
+
+    fetch('/get_dashboard', {
+      method: 'GET',
+      headers: {
+        'X-User-Role': role || 'guest',
+        'X-Context': context || 'default'
+      }
+    })
+      .then(res => res.json())
+      .then(data => {
+        renderDashboard(data.modules);
+      });
+  });
+
+window.toggleSettingsSidebar1 = function (event) {
+  const sidebar = document.getElementById("settingsSidebar");
+  if (!sidebar) return;
+  sidebar.classList.toggle("visible");
+};
+
+// ⚙️ Sidebar Toggle
+  window.toggleSettingsSidebar = function (event) {
+  event.stopPropagation(); // 🛡️ Prevent bubbling
+  const sidebar = document.getElementById("settingsSidebar");
+  if (!sidebar) return;
+  sidebar.classList.toggle("visible");
+};
+
+
+  // 🧪 Initial Load
+  ContextManager.get().then(({ role, context }) => {
+    document.getElementById("role").value = role || "";
+    document.getElementById("context").value = context || "";
+  });
+});
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    const runQueryBtn = document.getElementById("runQueryBtn");
+    if (!runQueryBtn) {
+      console.warn("Run Query button not found.");
+      return;
+    }
+
+    runQueryBtn.onclick = function () {
+      const queryfilename = document.getElementById("queryDropdown")?.value;
+      const vectorMode = "multi"; // or "single" based on your setup
+     
+      const knowledgeFilename = document.getElementById("fileDropdown")?.value;
+
+
+      if (!queryfilename){
+        alert("⚠️ Please select a query document first.");
+        return;
+      }
+
+      fetch("/docquery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ queryfilename,vectorMode, knowledgeFilename  })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const result = data.response || "⚠️ No response received.";
+        displayQueryResult(result);
+      })
+      .catch(err => {
+        console.error("Query failed:", err);
+        displayQueryResult("❌ Failed to run query.");
+      });
+    };
+
+    function displayQueryResult(message) {
+      const outputDiv = document.getElementById("queryOutput");
+      if (outputDiv) {
+        outputDiv.innerText = message;
+      } else {
+        alert(message);
+      }
+    }
+  });
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const roleInput = document.getElementById("role");
+  const contextInput = document.getElementById("context");
+
+  fetch('/load_context')
+    .then(res => res.json())
+    .then(({ role, context }) => {
+      roleInput.value = role || "General Advisor";
+      contextInput.value = context || "Provide helpful, concise responses with a neutral tone.";
+    })
+    .catch(err => {
+      console.warn("⚠️ Failed to load context from backend:", err);
+      roleInput.value = "General Advisor";
+      contextInput.value = "Provide helpful, concise responses with a neutral tone.";
+    });
+});
+
+
+
+document.addEventListener("click", function (e) {
+  const sidebar = document.getElementById("settingsSidebar");
+  if (!sidebar || !sidebar.classList.contains("visible")) return;
+
+  const clickedInsideSidebar = e.target.closest("#settingsSidebar");
+  const clickedToggleButton = e.target.closest(".sidebar-toggle");
+
+  if (!clickedInsideSidebar && !clickedToggleButton) {
+    sidebar.classList.remove("visible");
+  }
+});
+
+
+
+
+
+
+window.addEventListener("load", () => {
+  const vectorModeSelect = document.getElementById("vectorModeSelect");
+
+  const defaultMode = vectorModeSelect?.value || "single";
+  refreshFileList(defaultMode);
+
+  vectorModeSelect?.addEventListener("change", (e) => {
+    const mode = e.target.value;
+    if (!mode) {
+      console.warn("⚠️ No vector mode selected.");
+      return;
+    }
+    refreshFileList(mode);
+  });
+});
+
+
+
+
+
+  </script>
+</body>
+</html>
